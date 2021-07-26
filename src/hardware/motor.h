@@ -306,7 +306,7 @@ class StepperMotor {
 
         // Index points multiplier
         // Indicates how many points will be skipped in the sine wave during one input step on the STEP pin
-        #ifdef MAINTAIN_FULL_STEP
+        #ifdef MAINTAIN_FULL_STEPPING
         uint32_t indexPointsMultiplier = 32;
         #endif
 

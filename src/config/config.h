@@ -162,7 +162,7 @@
 
 // If the motor should maintain a full stepping when the microstepping is different
 // This allows the motor to run in full step mode, while running quieter
-//#define MAINTAIN_FULL_STEPPING
+#define MAINTAIN_FULL_STEPPING
 
 // Stallfault
 //#define ENABLE_STALLFAULT
