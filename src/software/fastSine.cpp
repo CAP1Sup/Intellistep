@@ -54,7 +54,7 @@ In full step mode, only 4 index points of  sine wave are used. (0, 1/2 pi, pi, 3
 The rest of the modes are in between them.
 
 Microstep  |Frequency of input | Shaft, | Number of input | Number of shaft
-divider    | pulses, Hz        |   RPM      | pulses          | rotations
+divider    | pulses, Hz        |   RPM  | pulses          | rotations
       1    |        200        |    60  |     200 * N     |     N
       2    |        400        |    60  |     400 * N     |     N
       4    |        800        |    60  |     800 * N     |     N
