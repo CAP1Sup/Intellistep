@@ -52,4 +52,13 @@ const int16_t sineTable[SINE_VAL_COUNT] = {
 In 1/32 microstep mode,  every sine wave index point is used. (0, 1, 2, ..., 127, 128==0, ...)
 In full step mode, only 4 index points of  sine wave are used. (0, 1/2 pi, pi, 3/2pi, 2pi, ...) == (0, 32, 64, 96, 128==0, ...)
 The rest of the modes are in between them.
+
+Microstep  |Frequency of input | Shaft, | Number of input | Number of shaft
+divider    | pulses, Hz        |   RPM      | pulses          | rotations
+      1    |        200        |    60  |     200 * N     |     N
+      2    |        400        |    60  |     400 * N     |     N
+      4    |        800        |    60  |     800 * N     |     N
+      8    |       1600        |    60  |    1600 * N     |     N
+     16    |       3200        |    60  |    3200 * N     |     N
+     32    |       6400        |    60  |    6400 * N     |     N
 */
