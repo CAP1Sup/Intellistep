@@ -22,7 +22,8 @@ typedef float real_t;
 #define REJECT_ENCODERS_LSB 2
 
 // If the steps should be counted using a hardware counter
-#define USE_HARDWARE_STEP_CNT
+//#define USE_HARDWARE_STEP_CNT
+#define USE_SOFTWARE_STEP_CNT
 
 // Board characteristics
 // ! Do not modify unless you know what you are doing!
@@ -43,7 +44,7 @@ typedef float real_t;
 // This can be set to 72 and 128 with SYSCLK_SRC_HSE_8 (external oscillator)
 // Can be set to 72 with SYSCLK_SRC_HSE_16 (external oscillator)
 // Can be set to 64 with SYSCLK_SRC_HSI (internal oscillator)
-#define SYSCLK_FREQ 128
+#define SYSCLK_FREQ 72
 #define SYSCLK_SRC_HSE_8
 
 // The compare format and maximum value for PWM (lower values = higher max freq)
@@ -122,7 +123,7 @@ typedef float real_t;
 
 // LED related debugging
 #ifdef ENABLE_LED
-    //#define CHECK_STEPPING_RATE
+    #define CHECK_STEPPING_RATE
     //#define CHECK_CORRECT_MOTOR_RATE
     //#define CHECK_ENCODER_SPEED
 #endif

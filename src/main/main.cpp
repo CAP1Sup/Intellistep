@@ -21,6 +21,8 @@ void setup() {
     // Set processor up
     SystemInit();
 
+    NVIC_SetPriorityGrouping(3); // __NVIC_PRIO_BITS
+
     // Configure the system clock
     #if defined(SYSCLK_SRC_HSE_16)
         #if SYSCLK_FREQ == 72

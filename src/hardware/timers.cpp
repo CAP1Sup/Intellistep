@@ -160,7 +160,7 @@ void disableInterrupts() {
 
     // Disable the interrupts if this is the first block
     if (interruptBlockCount == 0) {
-        __disable_irq();
+        //__disable_irq();
         syncInstructions();
     }
 
@@ -260,7 +260,8 @@ void stepMotor() {
 }
 
 
-// Need to declare a function to power the motor coils for the step interrupt
+#ifndef DISABLE_CORRECTION_TIMER
+    // Need to declare a function to power the motor coils for the step interrupt
 void correctMotor() {
     #ifdef CHECK_CORRECT_MOTOR_RATE
         GPIO_WRITE(LED_PIN, HIGH);
@@ -364,19 +365,19 @@ void correctMotor() {
 
                         // Motor is at a position smaller than the desired one
                         // Use the current angle to find the current step, then add 1
-                        #ifdef USE_HARDWARE_STEP_CNT
-                            motor.step(POSITIVE, 1);
-                        #else
+                        #ifdef USE_SOFTWARE_STEP_CNT
                             motor.step(POSITIVE, 1, false);
+                        #else
+                            motor.step(POSITIVE, 1);
                         #endif
                     }
                     else {
                         // Motor is at a position larger than the desired one
                         // Use the current angle to find the current step, then subtract 1
-                        #ifdef USE_HARDWARE_STEP_CNT
-                            motor.step(NEGATIVE, 1);
-                        #else
+                        #ifdef USE_SOFTWARE_STEP_CNT
                             motor.step(NEGATIVE, 1, false);
+                        #else
+                            motor.step(NEGATIVE, 1);
                         #endif
                     }
                 }
@@ -452,6 +453,7 @@ void correctMotor() {
         GPIO_WRITE(LED_PIN, LOW);
     #endif
 }
+#endif
 
 
 // Direct stepping
@@ -506,10 +508,10 @@ void stepScheduleHandler() {
     }
     else {
         // Just step the motor in the desired direction
-        #ifdef USE_HARDWARE_STEP_CNT
-            motor.step(scheduledStepDir, 1);
-        #else
+        #ifdef USE_SOFTWARE_STEP_CNT
             motor.step(scheduledStepDir, 1, false);
+        #else
+            motor.step(scheduledStepDir, 1);
         #endif
     }
 }

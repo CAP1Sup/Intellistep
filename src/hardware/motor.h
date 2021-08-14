@@ -105,7 +105,7 @@ class StepperMotor {
         void setDesiredStep(int32_t newDesiredStep);
 
         // Returns the desired step of the motor
-        int32_t getSoftStepCNT();
+        int32_t getSoftStepCNT() const;
 
         // Sets the desired step of the motor
         void setSoftStepCNT(int32_t newStepCNT);
@@ -195,7 +195,7 @@ class StepperMotor {
 
         // Calculates the coil values for the motor and updates the set angle.
         #ifdef USE_HARDWARE_STEP_CNT
-        void step(STEP_DIR dir, int32_t stepChange);
+        void step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos = true);
         #else
         void step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos = true);
         #endif
@@ -246,7 +246,7 @@ class StepperMotor {
         // Function that enables the motor
         void enable();
 
-        #ifndef USE_HARDWARE_STEP_CNT
+        #ifdef USE_SOFTWARE_STEP_CNT
             // Keeps the desired step of the motor
             int32_t softStepCNT = 0;
         #endif

@@ -150,40 +150,40 @@ int32_t StepperMotor::getStepPhase() {
 
 // Returns the desired angle of the motor
 float StepperMotor::getDesiredAngle() {
-    #ifdef USE_HARDWARE_STEP_CNT
-        return (microstepAngle * getHardStepCNT());
-    #else
+    #ifdef USE_SOFTWARE_STEP_CNT
         return (microstepAngle * getSoftStepCNT());
+    #else
+        return (microstepAngle * getHardStepCNT());
     #endif
 }
 
 
 // Sets the desired angle of the motor
 void StepperMotor::setDesiredAngle(float newDesiredAngle) {
-    #ifdef USE_HARDWARE_STEP_CNT
-        setHardStepCNT(round(newDesiredAngle / microstepAngle));
-    #else
+    #ifdef USE_SOFTWARE_STEP_CNT
         setSoftStepCNT(round(newDesiredAngle / microstepAngle));
+    #else
+        setHardStepCNT(round(newDesiredAngle / microstepAngle));
     #endif
 }
 
 
 // Returns the desired step of the motor
 int32_t StepperMotor::getDesiredStep() {
-    #ifdef USE_HARDWARE_STEP_CNT
-        return getHardStepCNT();
-    #else
+    #ifdef USE_SOFTWARE_STEP_CNT
         return getSoftStepCNT();
+    #else
+        return getHardStepCNT();
     #endif
 }
 
 
 // Sets the desired step of the motor
 void StepperMotor::setDesiredStep(int32_t newDesiredStep) {
-    #ifdef USE_HARDWARE_STEP_CNT
-        setHardStepCNT(newDesiredStep);
-    #else
+    #ifdef USE_SOFTWARE_STEP_CNT
         setSoftStepCNT(newDesiredStep);
+    #else
+        setHardStepCNT(newDesiredStep);
     #endif
 }
 
@@ -223,9 +223,11 @@ void overflowHandler() {
         motor.stepOverflowOffset -= TIM_PERIOD;
     }
 }
-#else // ! USE_HARDWARE_STEP_CNT
+#endif // USE_HARDWARE_STEP_CNT
+
+#ifdef USE_SOFTWARE_STEP_CNT
 // Returns the desired step of the motor
-int32_t StepperMotor::getSoftStepCNT() {
+int32_t StepperMotor::getSoftStepCNT() const {
     return (this -> softStepCNT);
 }
 
@@ -234,7 +236,7 @@ int32_t StepperMotor::getSoftStepCNT() {
 void StepperMotor::setSoftStepCNT(int32_t newStepCNT) {
     this -> softStepCNT = newStepCNT;
 }
-#endif // ! USE_HARDWARE_STEP_CNT
+#endif // USE_SOFTWARE_STEP_CNT
 
 
 #ifdef ENABLE_DYNAMIC_CURRENT
@@ -347,10 +349,10 @@ void StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
         float stepScalingFactor = (setMicrostepping / this -> microstepDivisor);
 
         // Scale the step count
-        #ifdef USE_HARDWARE_STEP_CNT
-            setHardStepCNT(getHardStepCNT() * stepScalingFactor);
-        #else
+        #ifdef USE_SOFTWARE_STEP_CNT
             setSoftStepCNT(getSoftStepCNT() * stepScalingFactor);
+        #else
+            setHardStepCNT(getHardStepCNT() * stepScalingFactor);
         #endif
 
         // Scale the microstep multiplier so that the full stepping level is maintained
@@ -490,7 +492,7 @@ void StepperMotor::simpleStep() {
 
 // Computes the coil values for the next step position and increments the set angle
 #ifdef USE_HARDWARE_STEP_CNT
-void StepperMotor::step(STEP_DIR dir, int32_t stepChange) {
+void StepperMotor::step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos) {
 #else
 void StepperMotor::step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos) {
 #endif
@@ -540,7 +542,7 @@ void StepperMotor::step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos)
 
     stepChange *= dir * (this -> reversed);
 
-    #ifndef USE_HARDWARE_STEP_CNT
+    #ifdef USE_SOFTWARE_STEP_CNT
     // Update the desired angle if specified
     if (updateDesiredPos) {
 

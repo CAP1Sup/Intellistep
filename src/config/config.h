@@ -115,7 +115,7 @@
 
 // PID settings
 // ! At this time, this feature is still under development
-#define ENABLE_PID
+//#define ENABLE_PID
 #ifdef ENABLE_PID
 
     // Default P, I, and D terms
@@ -137,7 +137,7 @@
 #endif
 
 // Direct step functionality (used to command motor to move over Serial/CAN)
-#define ENABLE_DIRECT_STEPPING
+//#define ENABLE_DIRECT_STEPPING
 #ifdef ENABLE_DIRECT_STEPPING
 
     // The default stepping rate (in Hz) to move in the event that no parameter is specified
