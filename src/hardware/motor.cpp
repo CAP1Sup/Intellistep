@@ -353,6 +353,11 @@ void StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
             setSoftStepCNT(getSoftStepCNT() * stepScalingFactor);
         #endif
 
+        // Scale the steps per mm (only used if FULL_MOTION_PLANNER is enabled)
+        #ifdef ENABLE_FULL_MOTION_PLANNER
+        this -> stepsPerMM *= stepScalingFactor;
+        #endif
+
         // Scale the microstep multiplier so that the full stepping level is maintained
         // This needs to be done before the new divisor is set
         #ifdef MAINTAIN_FULL_STEPPING
@@ -417,6 +422,19 @@ int32_t StepperMotor::getMicrostepsPerRotation() const {
     return (this -> microstepsPerRotation);
 }
 
+// Only needed if FULL_MOTION_PLANNER is enabled
+#ifdef ENABLE_FULL_MOTION_PLANNER
+// Set the steps per mm of the motor
+void StepperMotor::setStepsPerMM(float newStepsPerMM) {
+    this -> stepsPerMM = newStepsPerMM;
+}
+
+
+// Get the steps per mm of the motor
+float StepperMotor::getStepsPerMM() {
+    return (this -> stepsPerMM);
+}
+#endif // ! ENABLE_FULL_MOTION_PLANNER
 
 // Set if the motor direction should be reversed or not
 void StepperMotor::setReversed(bool reversed) {
@@ -515,22 +533,6 @@ void StepperMotor::step(STEP_DIR dir, int32_t stepChange, bool updateDesiredPos)
     else {
         // Move the number of steps specified by the microstep multiplier
         stepChange = (this -> microstepMultiplier);
-    }
-    */
-    /*
-    // Invert the change based on the direction
-    if (dir == PIN) {
-
-        // Use the DIR_PIN state to decide direction
-        stepChange *= (DIRECTION(GPIO_READ(DIRECTION_PIN)) * (this -> reversed));
-    }
-    //else if (dir == COUNTER_CLOCKWISE) {
-        // Nothing to do here, the value is already positive
-    //}
-    else if (dir == CLOCKWISE) {
-
-        // Make the step change in the negative direction
-        stepChange = -stepChange;
     }
     */
 

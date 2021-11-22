@@ -145,13 +145,17 @@
     #endif
 #endif
 
-// Direct step functionality (used to command motor to move over Serial/CAN)
-#define ENABLE_DIRECT_STEPPING
-#ifdef ENABLE_DIRECT_STEPPING
+// Full motion planner (allows for G code control of motor)
+#define ENABLE_FULL_MOTION_PLANNER
+#ifdef ENABLE_FULL_MOTION_PLANNER
+    // Direct step functionality (used to command motor to move over Serial/CAN)
+    #define ENABLE_DIRECT_STEPPING
+    #ifdef ENABLE_DIRECT_STEPPING
 
-    // The default stepping rate (in Hz) to move in the event that no parameter is specified
-    #define DEFAULT_STEPPING_RATE 1000
-#endif
+        // The default stepping rate (in Hz) to move in the event that no parameter is specified
+        #define DEFAULT_STEPPING_RATE 1000
+    #endif
+#endif // ! ENABLE_FULL_MOTION_PLANNER
 
 // Motor settings
 // The number of microsteps to move per step pulse

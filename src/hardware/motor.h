@@ -6,6 +6,7 @@
 #include "HardwareTimer.h"
 #include "encoder.h"
 #include "fastAnalogWrite.h"
+#include "planner.h"
 #include "stm32f1xx_hal_tim.h"
 
 // For sin() and fmod() function
@@ -172,6 +173,15 @@ class StepperMotor {
         // Get the microsteps per rotation of the motor
         int32_t getMicrostepsPerRotation() const;
 
+        // Only needed if FULL_MOTION_PLANNER is enabled
+        #ifdef ENABLE_FULL_MOTION_PLANNER
+        // Set the steps per mm of the motor
+        void setStepsPerMM(float newStepsPerMM);
+
+        // Get the steps per mm of the motor
+        float getStepsPerMM();
+        #endif // ! ENABLE_FULL_MOTION_PLANNER
+
         // Set if the motor should be reversed
         void setReversed(bool reversed);
 
@@ -234,6 +244,15 @@ class StepperMotor {
         // TIM2 -> CNT is unsigned, stepOverflowOffset is unsigned, but ((TIM2 -> CNT) + stepOverflowOffset) is treated as signed value
         int32_t stepOverflowOffset = 0;
 
+        // Motion planner features
+        #ifdef ENABLE_FULL_MOTION_PLANNER
+        // Planner (used for motion support)
+        Planner planner;
+
+        // Motor axis
+        AXES axis = A_AXIS;
+        #endif // ! ENABLE_FULL_MOTION_PLANNER
+
         // Microstep multiplier (used to move a custom number of microsteps per step pulse)
         uint32_t microstepMultiplier = DEFAULT_MICROSTEP_MULTIPLIER;
 
@@ -292,6 +311,11 @@ class StepperMotor {
         // Microstep count in a full rotation
         int32_t microstepsPerRotation = (360.0 / getMicrostepAngle());
 
+        // Variable to save the steps per mm of the motor (only needed if FULL_MOTION_PLANNER is enabled)
+        #ifdef ENABLE_FULL_MOTION_PLANNER
+        float stepsPerMM = 0;
+        #endif
+  
         // Step to sine array conversion
         int32_t stepToSineArrayFactor = MAX_MICROSTEP_DIVISOR / getMicrostepping();
 

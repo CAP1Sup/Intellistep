@@ -54,12 +54,12 @@ void stepMotorNoDesiredAngle();
 void correctMotor();
 
 // Direct stepping
-#ifdef ENABLE_DIRECT_STEPPING
+#ifdef ENABLE_FULL_MOTION_PLANNER
 // Schedule steps for the motor to execute (rate is in Hz)
 void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir);
-#endif // ! ENABLE_DIRECT_STEPPING
+#endif // ! ENABLE_FULL_MOTION_PLANNER
 
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
 // Step schedule handler (runs when the interrupt is triggered)
 void stepScheduleHandler();
 
@@ -68,7 +68,7 @@ void enableStepScheduleTimer();
 
 // Convenience function to handle disabling the step schedule timer
 void disableStepScheduleTimer();
-#endif // ! ENABLE_DIRECT_STEPPING || ENABLE_PID
+#endif // ! ENABLE_FULL_MOTION_PLANNER || ENABLE_PID
 
 // Makes sure that all cached calls respect the current config
 void syncInstructions();

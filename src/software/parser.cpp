@@ -10,6 +10,11 @@
 String parseCommand(String buffer) {
 
     // Gcode Table
+    //  - G90 Absolute positioning // http://linuxcnc.org/docs/html/gcode/g-code.html#gcode:g90-g91
+    //  - G91 incremental positioning // http://linuxcnc.org/docs/html/gcode/g-code.html#gcode:g90-g91
+    //  - G0 (ex G0 R1000 A123.45) // http://linuxcnc.org/docs/html/gcode/g-code.html#gcode:g0
+    //    https://marlinfw.org/docs/gcode/G006.html
+    //  - G6 (ex G6 D0 R1000 S1000) - Direct stepping, commands the motor to move a specified number of steps in the specified direction. D is direction (0 for CCW, 1 for CW), R is rate (in Hz), and S is the count of steps to move. Requires `ENABLE_DIRECT_STEPPING`
     //  - M17 (ex M17) - Enables the motor (overrides enable pin)
     //  - M18 / M84 (ex M18 or M84) - Disables the motor (overrides enable pin)
     //  - M93 (ex M93 V1.8 or M93) - Sets the angle of a full step. This value should be 1.8° or 0.9°. If no value is provided, then the current value will be returned.
@@ -396,13 +401,81 @@ String parseCommand(String buffer) {
     }
 
     // Gcodes support
-    #ifdef ENABLE_DIRECT_STEPPING
+    #ifdef ENABLE_FULL_MOTION_PLANNER
     // Check to see if a gcode exists
     else if (parseValue(buffer, 'G') != "-1") {
 
         // Switch statement the command number
         switch (parseValue(buffer, 'G').toInt()) {
 
+            case 0: {
+                // - G0 (ex G0 R1000 A123.45) - Rapid movement at a specified distance. Distance can be in degrees (for axes A, B, C) or in mm (for axes X, Y, Z). Steps/mm must be set for movements using mm units. The feedrate is in units per minute (mm/m for X, Y, and Z, deg/m for A, B, and C)
+                // http://linuxcnc.org/docs/html/gcode/g-code.html#gcode:g0
+                // Pull the values from the command
+                float value = parseValue(buffer, (char)motor.axis).toFloat();
+                float rate = parseValue(buffer, 'F').toFloat();
+
+                // Sanitize the inputs
+                if (rate <= 0) {
+                    rate = motor.planner.getLastFeedRate();
+                }
+
+                // Save the new rate for next time (needed if the next command doesn't specify rate)
+                motor.planner.setLastFeedRate(rate);
+
+                // Determine the number of steps we need to move
+                // Create a count value for number of steps
+                int32_t count;
+
+                // Decide if units are mm or deg based on axis letter
+                if ((char)motor.axis == 'A' || (char)motor.axis == 'B' || (char)motor.axis == 'C') {
+
+                    // Units are degrees
+                    count = round(value / motor.getMicrostepAngle());
+
+                    // Fix the rate so that it is in steps/s instead of deg/m
+                    rate = (rate / (motor.getMicrostepAngle() * 60));
+                }
+                else {
+                    // Units must be in mm
+                    // Check to make sure that steps per mm has been set
+                    if (motor.getStepsPerMM() > 0) {
+
+                        // Set the count value
+                        count = round(value * motor.getStepsPerMM());
+
+                        // Fix the rate so that it is in steps/s instead of mm/m
+                        rate = (rate * motor.getStepsPerMM()) / 60;
+                    }
+                    else {
+                        // There is no steps per mm, throw an error
+                        return FEEDBACK_STEPS_PER_MM_NOT_SET;
+                    }
+                }
+
+                // Adjust the count by the current position if the mode is absolute
+                if (motor.planner.getDistanceMode() == ABSOLUTE) {
+                    count -= motor.getDesiredStep();
+                }
+
+                // Default to CCW rotation
+                STEP_DIR dir = POSITIVE;
+
+                // If the count is negative (motor needs to move in opposite direction)
+                // then we can make the count positive and fix the direction
+                if (count < 0) {
+                    count = -count;
+                    dir = NEGATIVE;
+                }
+
+                // Schedule the steps to be moved
+                scheduleSteps(count, rate, dir);
+
+                // Return that everything went well
+                return FEEDBACK_OK;
+            }
+
+            #ifdef ENABLE_DIRECT_STEPPING
             case 6: {
                 // G6 (ex G6 D0 R1000 S1000) - Direct stepping, commands the motor to move a specified number of steps in the specified direction. D is direction (0 for CCW, 1 for CW), R is rate (in Hz), and S is the count of steps to move
                 // Pull the values from the command
@@ -412,11 +485,17 @@ String parseCommand(String buffer) {
 
                 // Sanitize the inputs
                 if (rate <= 0) {
-                    rate = DEFAULT_STEPPING_RATE;
+                    rate = motor.planner.getLastStepRate();
                 }
-                if (count <= 0) {
+                if (count == 0) {
                     return FEEDBACK_NO_VALUE;
                 }
+                if (count < 0) {
+                    reverse = !reverse;
+                }
+
+                // Save the current rate as the new one
+                motor.planner.setLastStepRate(rate);
 
                 // Call the steps to be scheduled
                 if (!reverse) {
@@ -429,6 +508,17 @@ String parseCommand(String buffer) {
                 // All good, we can exit
                 return FEEDBACK_OK;
             }
+            #endif
+
+            case 90: {
+                motor.planner.setDistanceMode(ABSOLUTE);
+                return FEEDBACK_OK;
+            }
+
+            case 91: {
+                motor.planner.setDistanceMode(INCREMENTAL);
+                return FEEDBACK_OK;
+            }
 
             default: {
                 // Command isn't recognized, therefore throw an error
@@ -438,7 +528,7 @@ String parseCommand(String buffer) {
 
     }
 
-    #endif
+    #endif // ! ENABLE_FULL_MOTION_PLANNER
 
     // Nothing here, nothing to do
     return FEEDBACK_NO_CMD_SPECIFIED;

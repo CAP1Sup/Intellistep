@@ -44,7 +44,7 @@ static uint8_t interruptBlockCount = 0;
 
 
 // Setup everything related to step scheduling
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
 
     // Main timer for scheduling steps
     HardwareTimer *stepScheduleTimer = new HardwareTimer(TIM4);
@@ -75,7 +75,7 @@ void setupMotorTimers() {
     // - 5 - hardware step counter overflow handling
     // - 6 - step pin change
     // - 7.0 - position correction (or PID interval update)
-    // - 7.1 - scheduled steps (if ENABLE_DIRECT_STEPPING or ENABLE_PID)
+    // - 7.1 - scheduled steps (if ENABLE_FULL_MOTION_PLANNER or ENABLE_PID)
 
     // Check if StallFault is enabled
     #ifdef ENABLE_STALLFAULT
@@ -108,7 +108,7 @@ void setupMotorTimers() {
     #endif // ! DISABLE_CORRECTION_TIMER
 
     // Setup step schedule timer if it is enabled
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
         stepScheduleTimer -> pause();
         stepScheduleTimer -> setInterruptPriority(7, 1);
         stepScheduleTimer -> setMode(1, TIMER_OUTPUT_COMPARE); // Disables the output, since we only need the timed interrupt
@@ -133,7 +133,7 @@ void disableMotorTimers() {
     #endif
 
     // Disable the stepping timer if it is enabled
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
     disableStepScheduleTimer();
     #endif
 }
@@ -214,7 +214,7 @@ void disableStepCorrection() {
     }
 
     // Disable the stepping timer if needed
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
     disableStepScheduleTimer();
     #endif
 }
@@ -455,7 +455,7 @@ void correctMotor() {
 
 
 // Direct stepping
-#ifdef ENABLE_DIRECT_STEPPING
+#ifdef ENABLE_FULL_MOTION_PLANNER
 // Configure a specific number of steps to execute at a set rate (rate is in Hz)
 void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir) {
 
@@ -476,7 +476,7 @@ void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir) {
 }
 #endif
 
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_FULL_MOTION_PLANNER) || defined(ENABLE_PID))
 // Handles a step schedule event
 void stepScheduleHandler() {
 
@@ -533,7 +533,7 @@ void disableStepScheduleTimer() {
         syncInstructions();
     }
 }
-#endif // ! ENABLE_DIRECT_STEPPING
+#endif // ! ENABLE_FULL_MOTION_PLANNER || ENABLE_PID
 
 
 // Makes sure that all cached calls respect the current config

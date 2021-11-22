@@ -151,6 +151,12 @@
 #endif
 
 
+// Make sure that ENABLE_FULL_MOTION_PLANNER is defined, otherwise ENABLE_DIRECT_STEPPING can't be used
+#if (defined(ENABLE_DIRECT_STEPPING) && !defined(ENABLE_FULL_MOTION_PLANNER))
+    #error In order to use ENABLE_DIRECT_STEPPING, ENABLE_FULL_MOTION_PLANNER must be uncommented
+#endif
+
+
 // Microstep checks (makes sure that the min and max values are within viable ranges)
 #if (IS_POWER_2(MIN_MICROSTEP_DIVISOR) != 0)
 
