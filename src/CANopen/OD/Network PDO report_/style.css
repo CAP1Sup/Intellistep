@@ -1,0 +1,69 @@
+BODY {
+	WIDTH: 670px
+}
+H1 {
+	FONT-FAMILY: Tahoma, Geneva, sans-serif; COLOR: #333333
+}
+H2 {
+	FONT-FAMILY: Tahoma, Geneva, sans-serif; COLOR: #333333
+}
+H3 {
+	FONT-FAMILY: Tahoma, Geneva, sans-serif; COLOR: #333333
+}
+P {
+	FONT-FAMILY: Tahoma, Geneva, sans-serif; COLOR: #333333
+}
+TABLE A:link {
+	TEXT-DECORATION: none; FONT-WEIGHT: bold; COLOR: #666
+}
+TABLE A:visited {
+	TEXT-DECORATION: none; FONT-WEIGHT: bold; COLOR: #999999
+}
+TABLE A:active {
+	TEXT-DECORATION: underline; COLOR: #bd5a35
+}
+TABLE A:hover {
+	TEXT-DECORATION: underline; COLOR: #bd5a35
+}
+TABLE {
+	FONT-SIZE: 12px; BORDER-TOP: #ccc 1px solid; FONT-FAMILY: Arial, Helvetica, sans-serif; BORDER-RIGHT: #ccc 1px solid; BACKGROUND: #eaebec; BORDER-BOTTOM: #ccc 1px solid; COLOR: #666; BORDER-LEFT: #ccc 1px solid; MARGIN: 20px; text-shadow: 1px 1px 0px #fff; -moz-border-radius: 3px; -webkit-border-radius: 3px; border-radius: 3px; -moz-box-shadow: 0 1px 2px #d1d1d1; -webkit-box-shadow: 0 1px 2px #d1d1d1; box-shadow: 0 1px 2px #d1d1d1
+}
+TABLE TH {
+	BORDER-TOP: #fafafa 1px solid; BACKGROUND: #ededed; BORDER-BOTTOM: #e0e0e0 1px solid; PADDING-BOTTOM: 5px; PADDING-TOP: 5px; PADDING-LEFT: 5px; PADDING-RIGHT: 5px
+}
+TABLE TH:first-child {
+	TEXT-ALIGN: left; PADDING-LEFT: 20px
+}
+TABLE TR:first-child TH:first-child {
+	-moz-border-radius-topleft: 3px; -webkit-border-top-left-radius: 3px; border-top-left-radius: 3px
+}
+TABLE TR:first-child TH:unknown {
+	-moz-border-radius-topright: 3px; -webkit-border-top-right-radius: 3px; border-top-right-radius: 3px
+}
+TABLE TR {
+	TEXT-ALIGN: center; PADDING-LEFT: 20px
+}
+TABLE TD:first-child {
+	BORDER-LEFT-WIDTH: 0px; TEXT-ALIGN: left; PADDING-LEFT: 20px
+}
+TABLE TD {
+	BORDER-TOP: #ffffff 1px solid; BACKGROUND: #fafafa; BORDER-BOTTOM: #e0e0e0 1px solid; PADDING-BOTTOM: 5px; PADDING-TOP: 5px; PADDING-LEFT: 5px; BORDER-LEFT: #e0e0e0 1px solid; PADDING-RIGHT: 5px
+}
+TABLE TR.even TD {
+	BACKGROUND: #f6f6f6
+}
+TABLE TR:unknown TD {
+	BORDER-BOTTOM-WIDTH: 0px
+}
+TABLE TR:unknown TD:first-child {
+	-moz-border-radius-bottomleft: 3px; -webkit-border-bottom-left-radius: 3px; border-bottom-left-radius: 3px
+}
+TABLE TR:unknown TD:unknown {
+	-moz-border-radius-bottomright: 3px; -webkit-border-bottom-right-radius: 3px; border-bottom-right-radius: 3px
+}
+TABLE TR:hover TD {
+	BACKGROUND: #f2f2f2
+}
+.receivers {
+	WIDTH: 90%
+}
