@@ -10,7 +10,7 @@
 #include "cube.h"
 
 // Create a new motor instance
-StepperMotor motor = StepperMotor();
+StepperMotor motor = StepperMotor(FlashParameters::getInstance());
 
 // Create a variable for storing the starting time
 // Used for timing display updates to be smooth regardless of processsing time
@@ -102,7 +102,7 @@ void setup() {
     #endif
 
     // Only run if the OLED is enabled
-    #ifdef ENABLE_OLED
+    #if (ENABLE_OLED != 0)
 
         // Initialize the OLED
         initOLED();
@@ -125,12 +125,12 @@ void setup() {
     #endif
 
     // Initialize the serial bus
-    #ifdef ENABLE_SERIAL
+    #if (ENABLE_SERIAL != 0)
         initSerial();
     #endif
 
     // Initialize the CAN bus
-    #ifdef ENABLE_CAN
+    #if (ENABLE_CAN != 0)
         // Initialize the CAN bus
         initCAN();
     #endif
@@ -140,10 +140,10 @@ void setup() {
     //writeOLEDString(0, 0, "Close Loop Mode");
 
     // Check if the board is calibrated. Need to force calibration if the board isn't calibrated
-    if (!isCalibrated()) {
+    if (!FlashParameters::getInstance().isCalibrated()) {
 
         // Only needed for OLED changes
-        #ifdef ENABLE_OLED
+        #if (ENABLE_OLED != 0)
         // Note the start time
         uint32_t startTime = getCurrentMillis();
 
@@ -157,7 +157,7 @@ void setup() {
         while(true) {
 
             // Only display to screen if the screen is enabled
-            #ifdef ENABLE_OLED
+            #if (ENABLE_OLED != 0)
 
             // Calculate the elapsed time (should make the if comparisions faster and more consistent)
             uint32_t elapsedTime = (getCurrentMillis() - startTime);
@@ -199,12 +199,19 @@ void setup() {
                 motor.calibrate();
             }
 
-            #else // ! ENABLE_OLED
+            #endif // ! ENABLE_OLED
+                // Check to see if serial data is available to read
+            #if (ENABLE_SERIAL != 0)
+                runSerialParser();
+            #endif
 
+            #if ((ENABLE_SERIAL == 0) && (ENABLE_OLED == 0)) 
             // Just jump to calibrating the motor (board reboots afterward)
             // Reboot the chip
             motor.calibrate();
             #endif // ! ENABLE_OLED
+
+
 
             // ! Only for testing
             //blink();
@@ -214,7 +221,7 @@ void setup() {
         // There is a calibration, load it and move on to the loop
 
         // Only include the extensive flash printout if the OLED is enabled
-        #ifdef ENABLE_OLED
+        #if (ENABLE_OLED != 0)
 
             // Let the user know that the calibration was successfully loaded
             clearOLED();
@@ -225,7 +232,7 @@ void setup() {
             writeOLEDString(0, LINE_HEIGHT * 2, F("Flash load"), false);
 
             // Attempt to load the parameters from flash
-            if (loadParameters() == FLASH_LOAD_SUCCESSFUL) {
+            if (FlashParameters::getInstance().loadParameters() == FLASH_LOAD_SUCCESSFUL) {
                 writeOLEDString(0, LINE_HEIGHT * 3, F("successful"), true);
             }
             else {
@@ -265,12 +272,12 @@ void setup() {
     }
 
     // Zero the encoder after motor is enabled
-    #ifndef DISABLE_ENCODER
+    #if (ENABLE_ENCODER == true)
     motor.encoder.zero();
-    #endif
+    #endif //ENABLE_ENCODER
 
     // Only need to display info if OLED is enabled
-    #ifdef ENABLE_OLED
+    #if (ENABLE_OLED != 0)
     // Let the user read the message
     delay(POWERUP_DISPLAY_TIME - (startTime - getCurrentMillis()));
 
@@ -293,11 +300,11 @@ void loop() {
     checkDips();
 
     // Check to see if serial data is available to read
-    #ifdef ENABLE_SERIAL
+    #if (ENABLE_SERIAL != 0)
         runSerialParser();
     #endif
 
-    #ifdef ENABLE_OLED
+    #if (ENABLE_OLED != 0)
         // Check the buttons
         checkButtons();
 
@@ -315,7 +322,8 @@ void loop() {
         // We should delay the time remaining in the loop
         // We can take the set time for a loop and subtract the already taken time from it
         // This helps to stabilize the IO updates
-        delay(MIN_IO_LOOP_TIME - (getCurrentMillis() - startTime)); // ! Maybe remove? This could make the updates much faster
+        int64_t timeToSleep(constrain(MIN_IO_LOOP_TIME - (getCurrentMillis() - startTime), 0, MIN_IO_LOOP_TIME));
+        delay(timeToSleep); // ! Maybe remove? This could make the updates much faster
     #endif
 }
 

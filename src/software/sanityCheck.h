@@ -21,7 +21,7 @@
 #endif
 
 // Warning settings only need checked when the OLED is enabled
-#ifdef ENABLE_OLED
+#if (ENABLE_OLED != 0)
     // Check to make sure that at least a peak or RMS wanring current is defined
     #if !(defined(WARNING_PEAK_CURRENT) || defined(WARNING_RMS_CURRENT))
         #error "A warning peak or warning RMS current must be defined!"
@@ -40,13 +40,13 @@
 #endif
 
 // Check to make sure that at least a peak or RMS default current is defined
-#if !(defined(STATIC_PEAK_CURRENT) || defined(STATIC_RMS_CURRENT)) && !defined(ENABLE_DYNAMIC_CURRENT)
+#if !(defined(STATIC_PEAK_CURRENT) || defined(STATIC_RMS_CURRENT)) && (ENABLE_DYNAMIC_CURRENT == 0)
     #error "A static peak or static RMS current must be defined!"
 
 // Check to make sure both aren't defined already
-#elif (defined(STATIC_PEAK_CURRENT) && defined(STATIC_RMS_CURRENT)) && !defined(ENABLE_DYNAMIC_CURRENT)
+#elif (defined(STATIC_PEAK_CURRENT) && defined(STATIC_RMS_CURRENT)) && (ENABLE_DYNAMIC_CURRENT == 0)
     #error "Only max peak or max RMS current can be defined, not both!"
-#elif !defined(ENABLE_DYNAMIC_CURRENT)
+#elif (ENABLE_DYNAMIC_CURRENT == 0)
     // Calculate the other current maximum
     #ifdef STATIC_PEAK_CURRENT
         #define STATIC_RMS_CURRENT (uint16_t)(STATIC_PEAK_CURRENT * 0.707)
@@ -101,38 +101,38 @@
 #define FIRMWARE_FEATURE_HEADER   String("Enabled features:")
 
 // Firmware feature print definition
-#ifdef ENABLE_OLED
-    #define FIRMWARE_FEATURE_OLED     "\nOLED"
+#if (ENABLE_OLED != 0)
+    #define FIRMWARE_FEATURE_OLED     "OLED\n"
 #else
     #define FIRMWARE_FEATURE_OLED     ""
 #endif
 
-#ifdef ENABLE_SERIAL
-    #define FIRMWARE_FEATURE_SERIAL    "\nSerial"
+#if (ENABLE_SERIAL != 0)
+    #define FIRMWARE_FEATURE_SERIAL    "Serial\n"
 #else
     #define FIRMWARE_FEATURE_SERIAL    ""
 #endif
 
-#ifdef ENABLE_CAN
-    #define FIRMWARE_FEATURE_CAN    "\nCAN"
+#if (ENABLE_CAN != 0)
+    #define FIRMWARE_FEATURE_CAN    "CAN\n"
 #else
     #define FIRMWARE_FEATURE_CAN    ""
 #endif
 
 #ifdef ENABLE_STALLFAULT
-    #define FIRMWARE_FEATURE_STALLFAULT    "\nStallFault"
+    #define FIRMWARE_FEATURE_STALLFAULT    "StallFault\n"
 #else
     #define FIRMWARE_FEATURE_STALLFAULT    ""
 #endif
 
-#ifdef ENABLE_DYNAMIC_CURRENT
-    #define FIRMWARE_FEATURE_DYNAMIC_CURRENT    "\nDynamic Current"
+#if (ENABLE_DYNAMIC_CURRENT != false)
+    #define FIRMWARE_FEATURE_DYNAMIC_CURRENT    "Dynamic Current\n"
 #else
     #define FIRMWARE_FEATURE_DYNAMIC_CURRENT    ""
 #endif
 
 #ifdef ENABLE_OVERTEMP_PROTECTION
-    #define FIRMWARE_FEATURE_OVERTEMP_PROTECTION    "\nOvertemp Protection"
+    #define FIRMWARE_FEATURE_OVERTEMP_PROTECTION    "Overtemp Protection\n"
 #else
     #define FIRMWARE_FEATURE_OVERTEMP_PROTECTION    ""
 #endif
@@ -180,7 +180,7 @@
 #define MICROSTEP_INTERVAL_CNT (uint16_t)(log2(MAX_MICROSTEP_DIVISOR) - log2(MIN_MICROSTEP_DIVISOR) + 1)
 
 // Throw errors if any of the encoder options are enabled while the encoder is disabled
-#if(defined(DISABLE_ENCODER) && (defined(STEP_CORRECTION) || defined(ENABLE_PID) || defined(ENABLE_DYNAMIC_CURRENT)))
+#if((ENABLE_ENCODER == false) && (defined(STEP_CORRECTION) || (ENABLE_PID == true) || (ENABLE_DYNAMIC_CURRENT != false )))
 
     // TODO: Make this say the option conflicting
     #error "The encoder can't be disabled while any of the encoder features are enabled!"

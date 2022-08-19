@@ -2,7 +2,7 @@
 #include "config.h"
 
 // Only build if specified
-#ifdef ENABLE_SERIAL
+#if (ENABLE_SERIAL != 0)
 
 // Import the header file
 #include "serial.h"
@@ -76,8 +76,8 @@ void runSerialParser() {
     // Check that it is an actual command, then proceed
     if (serialCommandBuffer != "-1") {
 
-        // Send the feedback from the serial command
-        sendSerialMessage(parseCommand(serialCommandBuffer) + "\n");
+        // Send the feedback from the serial command 2 \n are considered as command delimiter
+        sendSerialMessage(parseCommand(serialCommandBuffer) + "\n" + serialCommandBuffer + " _END_\n");
     }
 }
 

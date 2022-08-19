@@ -37,14 +37,14 @@ static uint8_t interruptBlockCount = 0;
 
 
 // Setup everything related to the PID timer if needed
-#ifdef ENABLE_PID
+#if (ENABLE_PID == true)
     // Create an instance of the PID class
     StepperPID pid = StepperPID();
 #endif
 
 
 // Setup everything related to step scheduling
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
 
     // Main timer for scheduling steps
     HardwareTimer *stepScheduleTimer = new HardwareTimer(TIM4);
@@ -115,7 +115,7 @@ void setupMotorTimers() {
     #endif // ! DISABLE_CORRECTION_TIMER
 
     // Setup step schedule timer if it is enabled
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
         stepScheduleTimer -> pause();
         stepScheduleTimer -> setInterruptPriority(SCHED_STEPS_PREMPT_PRIOR, SCHED_STEPS_SUB_PRIOR);
         stepScheduleTimer -> setMode(1, TIMER_OUTPUT_COMPARE); // Disables the output, since we only need the timed interrupt
@@ -140,7 +140,7 @@ void disableMotorTimers() {
     #endif
 
     // Disable the stepping timer if it is enabled
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
     disableStepScheduleTimer();
     #endif
 }
@@ -222,7 +222,7 @@ void disableStepCorrection() {
     }
 
     // Disable the stepping timer if needed
-    #if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+    #if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
     disableStepScheduleTimer();
     #endif
 }
@@ -322,7 +322,7 @@ void correctMotor() {
         if (stepDeviation != 0) {
 
             // Run PID stepping if enabled
-            #ifdef ENABLE_PID
+            #if (ENABLE_PID == true)
 
                 // Run the PID calcalations
                 int32_t pidOutput = round(pid.compute(currentAbsAngle, motor.getDesiredAngle()));
@@ -433,7 +433,7 @@ void correctMotor() {
         else { // Motor is in correct position
 
             // Disable the PID correction timer if PID is enabled
-            #ifdef ENABLE_PID
+            #if (ENABLE_PID == true)
                 disableStepScheduleTimer();
             #endif
 
@@ -475,6 +475,7 @@ void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir) {
     #ifndef DISABLE_CORRECTION_TIMER
     correctionTimer -> pause();
     #endif
+    disableStepScheduleTimer();
     syncInstructions();
 
     // Set the count and step direction
@@ -488,24 +489,21 @@ void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir) {
 }
 #endif
 
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
 // Handles a step schedule event
 void stepScheduleHandler() {
-
+    disableStepScheduleTimer();
     // Check if we should be worrying about remaining steps
     if (decrementRemainingSteps) {
-
+        
         // Increment the motor in the correct direction
-        motor.step(scheduledStepDir, motor.microstepMultiplier);
+        motor.step(scheduledStepDir, 1);
 
         // Increment the counter down (we completed a step)
         remainingScheduledSteps--;
 
         // Disable the timer if there are no remaining steps
         if (remainingScheduledSteps <= 0) {
-
-            // Pause the step timer (will be re-enabled by the PID loop)
-            disableStepScheduleTimer();
 
             // Resume the correctional timer if it is enabled
             if (stepCorrection) {
@@ -514,11 +512,12 @@ void stepScheduleHandler() {
                 #endif
                 syncInstructions();
             }
+        } else {
+            enableStepScheduleTimer();
         }
     }
     else {
-        // Just step the motor in the desired direction
-        motor.step(scheduledStepDir, 1);
+        enableStepScheduleTimer();
     }
 }
 

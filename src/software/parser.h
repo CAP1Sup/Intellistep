@@ -9,6 +9,8 @@
 // Defines for strings that are used repeatedly
 #define FEEDBACK_NO_VALUE          F("No value specified! Make sure to specify a value with a letter before it")
 #define FEEDBACK_OK                F("ok")
+#define FEEDBACK_KO                F("ko")
+#define FEEDBACK_WRONG_VALUE       F("Invalid parameter")
 #define FEEDBACK_CAN_NOT_ENABLED   F("CAN functionality not enabled")
 #define FEEDBACK_INVALID_STRING    F("Invalid string. Make sure that the string had double quotations on each side")
 #define FEEDBACK_NO_CMD_SPECIFIED  F("No command specified")

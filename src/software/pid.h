@@ -5,7 +5,7 @@
 #include "config.h"
 
 // Only build this file if PID is enabled
-#ifdef ENABLE_PID
+#if (ENABLE_PID == true)
 
 // Include Arduino library
 #include "Arduino.h"

@@ -110,8 +110,8 @@ typedef float real_t;
 
 // Dynamic current (adjusts motor current based on acceleration (and therefore torque)
 // required from the motor)
-//#define ENABLE_DYNAMIC_CURRENT
-#ifdef ENABLE_DYNAMIC_CURRENT
+#define ENABLE_DYNAMIC_CURRENT  false
+#if (ENABLE_DYNAMIC_CURRENT != false )
     // A dynamically controller current loop. Uses the equation: accel * accelCurrent + idleCurrent
     // Limited by the max dynamic current, which will limit the maximum that the dynamic loop can output
     // All current values are in RMS
@@ -136,12 +136,13 @@ typedef float real_t;
 // If the motor should try to correct after it thinks that steps have been missed
 // ! THIS IS UNLIKELY TO WORK, AND WILL PROBABLY JUST MESS EVERYTHING UP, DON"T ENABLE IT
 //#define STEP_CORRECTION
-#ifdef STEP_CORRECTION
-
     // Uses advanced PID control instead of correcting based on error direction
     // ! At this time, this feature is still under development
-    //#define ENABLE_PID
-    #ifdef ENABLE_PID
+#define ENABLE_PID false
+#ifdef STEP_CORRECTION
+
+
+    #if (ENABLE_PID == true)
         // PID settings
 
         // Default P, I, and D terms
@@ -167,8 +168,8 @@ typedef float real_t;
 // ! WARNING: For the time being, CAN must be enabled
 // ! Disabling it will result in the encoder not working
 // ! YOU HAVE BEEN WARNED!
-#define ENABLE_CAN
-#ifdef ENABLE_CAN
+#define ENABLE_CAN 0
+#if (ENABLE_CAN != 0)
     // The CAN ID of this board
     // X:2, X2:3...
     // Y:7, Y2:8...
@@ -249,9 +250,9 @@ typedef float real_t;
 //#define ENABLE_STEPPING_VELOCITY
 //#define IGNORE_FLASH_VERSION
 #ifndef STEP_CORRECTION
-    //#define DISABLE_CORRECTION_TIMER
+    #define DISABLE_CORRECTION_TIMER
 #endif
-//#define DISABLE_ENCODER
+#define ENABLE_ENCODER true
 
 // LED related debugging
 #ifdef ENABLE_LED

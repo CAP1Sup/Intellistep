@@ -12,7 +12,7 @@
 // Variables
 // Expose the StepperPID instance to other files
 // (such as the flash for loading or saving parameters)
-#ifdef ENABLE_PID
+#if (ENABLE_PID == true)
     extern StepperPID pid;
 #endif
 
@@ -63,7 +63,7 @@ void correctMotor();
 void scheduleSteps(int64_t count, int32_t rate, STEP_DIR stepDir);
 #endif // ! ENABLE_DIRECT_STEPPING
 
-#if (defined(ENABLE_DIRECT_STEPPING) || defined(ENABLE_PID))
+#if (defined(ENABLE_DIRECT_STEPPING) || (ENABLE_PID == true))
 // Step schedule handler (runs when the interrupt is triggered)
 void stepScheduleHandler();
 

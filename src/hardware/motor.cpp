@@ -7,8 +7,10 @@
 // Optimize for speed
 #pragma GCC optimize ("-Ofast")
 
-// Main constructor
-StepperMotor::StepperMotor() {
+
+// Constructor with non volatile storage parameters
+StepperMotor::StepperMotor(FlashParameters& aParameters):
+    mParameters(aParameters) {
 
     // Setup the input pins
     #ifndef USE_MKS_STEP_CNT_SETUP
@@ -211,7 +213,7 @@ void dirChangeISR() {
 }
 #endif
 
-#ifndef DISABLE_ENCODER
+#if (ENABLE_ENCODER == true)
 // Returns the current RPM of the encoder
 float StepperMotor::getEncoderRPM() {
 
@@ -270,15 +272,15 @@ float StepperMotor::getAngleError(double currentAbsAngle) {
 
 // Returns the step deviation of the motor from the desired step
 int32_t StepperMotor::getStepError() {
-    return (getDesiredStep() - round(encoder.getAbsoluteAngleAvg() / (this -> microstepAngle)));
+    return (getDesiredStep() - round(encoder.getAbsoluteAngleAvg() / getMicrostepAngle()));
 }
 
 
 // Returns the step deviation of the motor from the desired step
 int32_t StepperMotor::getStepError(double currentAbsAngle) {
-    return (getDesiredStep() - round(currentAbsAngle / (this -> microstepAngle)));
+    return (getDesiredStep() - round(currentAbsAngle / getMicrostepAngle()));
 }
-#endif
+#endif // ENABLE_ENCODER
 
 // Returns the current step of the motor phases (only 1 rotation worth)
 int32_t StepperMotor::getStepPhase() {
@@ -288,13 +290,13 @@ int32_t StepperMotor::getStepPhase() {
 
 // Returns the desired angle of the motor
 float StepperMotor::getDesiredAngle() {
-    return (microstepAngle * getActualStepCNT());
+    return (getMicrostepAngle() * getActualStepCNT());
 }
 
 
 // Sets the desired angle of the motor
 void StepperMotor::setDesiredAngle(float newDesiredAngle) {
-    setActualStepCNT(round(newDesiredAngle / microstepAngle));
+    setActualStepCNT(round(newDesiredAngle / getMicrostepAngle()));
 }
 
 
@@ -365,20 +367,20 @@ int32_t StepperMotor::getUnhandledStepCNT() {
 }
 
 
-#ifdef ENABLE_DYNAMIC_CURRENT
+#if (ENABLE_DYNAMIC_CURRENT != false )
 // Gets the acceleration factor for dynamic current
 uint16_t StepperMotor::getDynamicAccelCurrent() const {
-    return (this -> dynamicAccelCurrent);
+    return mParameters.getAccelCurrent();
 }
 
 // Gets the idle factor for dynamic current
 uint16_t StepperMotor::getDynamicIdleCurrent() const {
-    return (this -> dynamicIdleCurrent);
+    return mParameters.getRMSCurrent();
 }
 
 // Gets the max current factor for dynamic current
 uint16_t StepperMotor::getDynamicMaxCurrent() const {
-    return (this -> dynamicMaxCurrent);
+    return mParameters.getMAXCurrent();
 }
 
 // Sets the acceleration factor for dynamic current
@@ -386,7 +388,7 @@ void StepperMotor::setDynamicAccelCurrent(uint16_t newAccelFactor) {
 
     // Make sure that the value being set is positive (no negatives allowed)
     if (newAccelFactor >= 0) {
-        this -> dynamicAccelCurrent = newAccelFactor;
+        mParameters.setAccelCurrent(newAccelFactor);
     }
 }
 
@@ -395,7 +397,7 @@ void StepperMotor::setDynamicIdleCurrent(uint16_t newIdleFactor) {
 
     // Make sure that the value being set is positive (no negatives allowed)
     if (newIdleFactor >= 0) {
-        this -> dynamicIdleCurrent = newIdleFactor;
+        mParameters.setRMSCurrent(newIdleFactor);
     }
 }
 
@@ -404,7 +406,7 @@ void StepperMotor::setDynamicMaxCurrent(uint16_t newMaxCurrent) {
 
     // Make sure that the value being set is positive (no negatives allowed)
     if (newMaxCurrent >= 0) {
-        this -> dynamicMaxCurrent = newMaxCurrent;
+        mParameters.setMAXCurrent(newMaxCurrent);
     }
 }
 
@@ -412,13 +414,13 @@ void StepperMotor::setDynamicMaxCurrent(uint16_t newMaxCurrent) {
 
 // Gets the RMS current of the motor (in mA)
 uint16_t StepperMotor::getRMSCurrent() const {
-    return (this -> rmsCurrent);
+    return (mParameters.getRMSCurrent());
 }
 
 
 // Gets the peak current of the motor (in mA)
 uint16_t StepperMotor::getPeakCurrent() const {
-    return (this -> peakCurrent);
+    return (mParameters.getMAXCurrent());
 }
 
 
@@ -429,10 +431,10 @@ void StepperMotor::setRMSCurrent(uint16_t rmsCurrent) {
     if (rmsCurrent != -1) {
 
         // Make sure that the RMS current is within the current bounds of the motor, if so set it
-        this -> rmsCurrent = constrain(rmsCurrent, 0, MAX_RMS_BOARD_CURRENT);
+        mParameters.setRMSCurrent(rmsCurrent);
 
         // Also set the peak current
-        this -> peakCurrent = constrain((uint16_t)(rmsCurrent * 1.414), 0, MAX_PEAK_BOARD_CURRENT);
+        mParameters.setMAXCurrent((uint16_t)(rmsCurrent * 1.414));
     }
 }
 
@@ -444,23 +446,27 @@ void StepperMotor::setPeakCurrent(uint16_t peakCurrent) {
     if (peakCurrent != -1) {
 
         // Make sure that the peak current is within the current bounds of the motor, if so set it
-        this -> peakCurrent = constrain(peakCurrent, 0, MAX_PEAK_BOARD_CURRENT);
+        mParameters.setMAXCurrent(peakCurrent);
 
         // Also set the RMS current
-        this -> rmsCurrent = constrain((uint16_t)(peakCurrent * 0.707), 0, MAX_RMS_BOARD_CURRENT);
+        mParameters.setRMSCurrent(constrain((uint16_t)(peakCurrent * 0.707), 0, MAX_RMS_BOARD_CURRENT));
     }
 }
 #endif // ! ENABLE_DYNAMIC_CURRENT
 
 // Get the microstepping divisor of the motor
-uint8_t StepperMotor::getMicrostepping() {
-    return (this -> microstepDivisor);
+uint8_t StepperMotor::getMicrostepping() const {
+    return mParameters.getMicrostepping();
 }
 
 
 // Set the microstepping divisor of the motor
-void StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
+uint8_t StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
 
+    if (setMicrostepping != 1 && setMicrostepping != 2 && setMicrostepping != 4 && 
+        setMicrostepping != 8 && setMicrostepping != 16 && setMicrostepping != 32) {
+            return -1;
+        }
     // Make sure that the new value isn't a -1 (all functions that fail should return a -1)
     if (setMicrostepping != -1) {
 
@@ -468,11 +474,11 @@ void StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
         if (this -> microstepLocked && !lock) {
 
             // Nothing should be changed, exit the function
-            return;
+            return 0;
         }
 
         // Calculate the step scaling
-        float stepScalingFactor = (setMicrostepping / this -> microstepDivisor);
+        float stepScalingFactor = (setMicrostepping / mParameters.getMicrostepping());
 
         // Scale the step counts (both real and handled)
         setActualStepCNT(getActualStepCNT() * stepScalingFactor);
@@ -485,26 +491,24 @@ void StepperMotor::setMicrostepping(uint8_t setMicrostepping, bool lock) {
         #endif
 
         // Set the microstepping divisor
-        this -> microstepDivisor = setMicrostepping;
-
-        // Fix the microstep angle
-        this -> microstepAngle = (this -> fullStepAngle) / (this -> microstepDivisor);
-
-        // Fix the microsteps per rotation
-        this -> microstepsPerRotation = round(360.0 / microstepAngle);
+        mParameters.setMicrostepping(setMicrostepping);
 
         // Fix the step to sine array factor
         this -> stepToSineArrayFactor = MAX_MICROSTEP_DIVISOR / setMicrostepping;
 
         // Set that the microstepping should be locked for future writes
         this -> microstepLocked = lock;
+
+        // Update the timer based on the new microstepping
+        updateCorrectionTimer();
+
+        return 0;
     }
 }
 
 
 // Set the full step angle of the motor (in degrees)
 void StepperMotor::setFullStepAngle(float newStepAngle) {
-
     // Make sure that the new value isn't a -1 (all functions that fail should return a -1)
     if (newStepAngle != -1) {
 
@@ -513,13 +517,8 @@ void StepperMotor::setFullStepAngle(float newStepAngle) {
         if ((newStepAngle == (float)1.8) || (newStepAngle == (float)0.9)) {
 
             // Save the new full step angle
-            this -> fullStepAngle = newStepAngle;
+            mParameters.setFullStepAngle(newStepAngle);
 
-            // Fix the microstep angle
-            this -> microstepAngle = (this -> fullStepAngle) / (this -> microstepDivisor);
-
-            // Fix the microsteps per rotation
-            this -> microstepsPerRotation = round(360.0 / microstepAngle);
         }
     }
 }
@@ -527,19 +526,19 @@ void StepperMotor::setFullStepAngle(float newStepAngle) {
 
 // Get the full step angle of the motor object
 float StepperMotor::getFullStepAngle() const {
-    return (this -> fullStepAngle);
+    return mParameters.getFullStepAngle();
 }
 
 
 // Get the microstep angle of the motor
 float StepperMotor::getMicrostepAngle() const {
-    return (this -> microstepAngle);
+    return getFullStepAngle() / getMicrostepping();
 }
 
 
 // Get the microsteps per rotation of the motor
 int32_t StepperMotor::getMicrostepsPerRotation() const {
-    return (this -> microstepsPerRotation);
+    return (360.0 / getMicrostepAngle());
 }
 
 
@@ -682,18 +681,18 @@ void StepperMotor::driveCoils(int32_t steps) {
     int16_t coilBPercent = fastCos(arrayIndex);
 
     // Equation comes out to be (effort * -1 to 1) depending on the sine/cosine of the phase angle
-    #ifdef ENABLE_DYNAMIC_CURRENT
+    #if (ENABLE_DYNAMIC_CURRENT != false )
 
         // Get the current acceleration
         double angAccel = abs(motor.encoder.getAccel());
 
         // Compute the coil power
-        int16_t coilAPower = ((int16_t)(((angAccel * (this -> dynamicAccelCurrent)) + (this -> dynamicIdleCurrent)) * 1.414) * coilAPercent) >> SINE_POWER;
-        int16_t coilBPower = ((int16_t)(((angAccel * (this -> dynamicAccelCurrent)) + (this -> dynamicIdleCurrent)) * 1.414) * coilBPercent) >> SINE_POWER;
+        int16_t coilAPower = ((int16_t)(((angAccel * getDynamicAccelCurrent()) + getDynamicIdleCurrent()) * 1.414) * coilAPercent) >> SINE_POWER;
+        int16_t coilBPower = ((int16_t)(((angAccel * getDynamicAccelCurrent()) + getDynamicIdleCurrent()) * 1.414) * coilBPercent) >> SINE_POWER;
     #else
         // Just use static current multipiers
-        int16_t coilAPower = ((int16_t)(this -> peakCurrent) * coilAPercent) >> SINE_POWER; // i.e. / SINE_MAX
-        int16_t coilBPower = ((int16_t)(this -> peakCurrent) * coilBPercent) >> SINE_POWER; // i.e. / SINE_MAX
+        int16_t coilAPower = (getPeakCurrent() * coilAPercent) >> SINE_POWER; // i.e. / SINE_MAX
+        int16_t coilBPower = (getPeakCurrent() * coilBPercent) >> SINE_POWER; // i.e. / SINE_MAX
     #endif
 
     // Check the if the coil should be energized to move backward or forward
@@ -745,7 +744,7 @@ void StepperMotor::driveCoilsAngle(float degAngle) {
     }
 
     // Convert the angle to microstep values (formula uses degAngle * full steps for rotation * microsteps)
-    float microstepAngle = (degAngle / this -> fullStepAngle) * (this -> microstepDivisor);
+    float microstepAngle = (degAngle / getMicrostepAngle()) * (mParameters.getMicrostepping());
 
     // Round the microstep angle, it has to be a whole value of the number of microsteps available
     // Also ensures that the coils are being driven to the major step positions (increases torque)
@@ -943,7 +942,7 @@ MOTOR_STATE StepperMotor::getState() const {
 void StepperMotor::calibrate() {
 
     // Only include if specified
-    #ifdef ENABLE_OLED
+    #if (ENABLE_OLED != 0)
 
         // Display that calibration is coming soon
         clearOLED();
@@ -965,7 +964,7 @@ void StepperMotor::calibrate() {
     // Delay three seconds, giving the motor time to settle
     delay(3000);
 
-    #ifndef DISABLE_ENCODER
+    #if (ENABLE_ENCODER == true)
     // Force the encoder to be read a couple of times, wiping the previous position out of the average
     // (this reading needs to be as precise as possible)
     for (uint8_t readings = 0; readings < ANGLE_AVG_READINGS; readings++) {
@@ -980,28 +979,28 @@ void StepperMotor::calibrate() {
 
     // Add/subtract the full step angle till the rawStepOffset is within the range of a full step
     while (stepOffset < 0) {
-        stepOffset += (this -> fullStepAngle);
+        stepOffset += getMicrostepAngle();
     }
-    while (stepOffset > (this -> fullStepAngle)) {
-        stepOffset -= (this -> fullStepAngle);
+    while (stepOffset > getMicrostepAngle()) {
+        stepOffset -= getMicrostepAngle();
     }
-    #endif
+    #endif  // ENABLE_ENCODER
 
     // Calibrate PID loop
 
     // Erase all of the written parameters
     // ! Just a quick fix, needs a better fix later
-    eraseParameters();
+    mParameters.eraseParameters();
 
     // Write the step offset into the flash
-    #ifndef DISABLE_ENCODER
-    writeFlash(STEP_OFFSET_INDEX, stepOffset);
-    #else
-    writeFlash(STEP_OFFSET_INDEX, (float)0);
-    #endif
+    #if (ENABLE_ENCODER == true)
+        mParameters.setCalibration( stepOffset);
+    #else // ENABLE_ENCODER == false
+        mParameters.setCalibration( 0, false);
+    #endif // ENABLE_ENCODER
 
-    // Write that the module is configured
-    writeFlash(CALIBRATED_INDEX, true);
+    //save to flash
+    mParameters.saveParameters();
 
     // Reboot the chip
     NVIC_SystemReset();

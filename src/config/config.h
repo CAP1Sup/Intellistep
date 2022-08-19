@@ -21,8 +21,8 @@
 #endif
 
 // OLED (display)
-#define ENABLE_OLED
-#ifdef ENABLE_OLED
+#define ENABLE_OLED 1
+#if (ENABLE_OLED != 0)
 
     // Button settings
     //#define INVERTED_DIPS // Enable if your dips are inverted ("on" print is facing away from motor connector)
@@ -38,8 +38,8 @@
 #endif
 
 // Serial configuration settings
-#define ENABLE_SERIAL
-#ifdef ENABLE_SERIAL
+#define ENABLE_SERIAL 1
+#if (ENABLE_SERIAL != 0)
     #define SERIAL_BAUD 115200
 #endif
 

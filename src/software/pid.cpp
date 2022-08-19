@@ -2,7 +2,7 @@
 #include "pid.h"
 
 // Only compile this file if PID is enabled
-#ifdef ENABLE_PID
+#if (ENABLE_PID == true)
 
 // Main constructor
 StepperPID::StepperPID() {

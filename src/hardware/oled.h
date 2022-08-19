@@ -24,6 +24,7 @@ typedef enum {
     MICROSTEP,
     ENABLE_LOGIC,
     DIR_LOGIC,
+    DIP_SWITCHES,
     SAVED_DATA
 } SUBMENU;
 

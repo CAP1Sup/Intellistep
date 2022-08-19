@@ -16,7 +16,7 @@ uint32_t lastButtonClickTime = 0;
 void initButtons() {
 
   // Only build if specified
-  #ifdef ENABLE_OLED
+  #if (ENABLE_OLED != 0)
 
     // Down pin (moves the menu down)
     pinMode(DOWN_BUTTON_PIN, INPUT_PULLUP);
@@ -39,7 +39,7 @@ void initButtons() {
 }
 
 // Only include button code if using the OLED panel
-#ifdef ENABLE_OLED
+#if (ENABLE_OLED != 0)
 
 // Scan each of the buttons
 void checkButtons() {
@@ -112,56 +112,59 @@ bool checkButtonState(PinName buttonPin) {
 
 // Function for reading the microstepping set via the dip switches
 void readDipMicrostepping() {
+  if (FlashParameters::getInstance().getDipswitchUse())
+    {
+      // Dips are not inverted, they are installed correctly
+      PinName dip1 = DIP_1_PIN;
+      PinName dip2 = DIP_2_PIN;
 
-    // Dips are not inverted, they are installed correctly
-    PinName dip1 = DIP_1_PIN;
-    PinName dip2 = DIP_2_PIN;
+      // Check if the dip switches are inverted
+      if (dipInverted) {
+          // If they were installed incorrectly, they have to be read opposite
+          dip1 = DIP_4_PIN;
+          dip2 = DIP_3_PIN;
+      }
 
-    // Check if the dip switches are inverted
-    if (dipInverted) {
-        // If they were installed incorrectly, they have to be read opposite
-        dip1 = DIP_4_PIN;
-        dip2 = DIP_3_PIN;
+      if (!GPIO_READ(dip1) && !GPIO_READ(dip2)) {
+
+          // Set the microstepping to 1/32 if both dips are on
+          motor.setMicrostepping(32, false);
+      }
+      else if (GPIO_READ(dip1) && !GPIO_READ(dip2)) {
+
+          // Set the microstepping to 1/16 if the left dip is off and the right is on
+          motor.setMicrostepping(16, false);
+      }
+      else if (!GPIO_READ(dip1) && GPIO_READ(dip2)) {
+
+          // Set the microstepping to 1/8 if the right dip is off and the left on
+          motor.setMicrostepping(8, false);
+      }
+      else {
+          // Both are off, just revert to using full stepping
+          motor.setMicrostepping(1, false);
+      }
+
+      
     }
-
-    if (!GPIO_READ(dip1) && !GPIO_READ(dip2)) {
-
-        // Set the microstepping to 1/32 if both dips are on
-        motor.setMicrostepping(32, false);
-    }
-    else if (GPIO_READ(dip1) && !GPIO_READ(dip2)) {
-
-        // Set the microstepping to 1/16 if the left dip is off and the right is on
-        motor.setMicrostepping(16, false);
-    }
-    else if (!GPIO_READ(dip1) && GPIO_READ(dip2)) {
-
-        // Set the microstepping to 1/8 if the right dip is off and the left on
-        motor.setMicrostepping(8, false);
-    }
-    else {
-        // Both are off, just revert to using full stepping
-        motor.setMicrostepping(1, false);
-    }
-
-    // Update the timer based on the new microstepping
-    updateCorrectionTimer();
 }
 
 
 // Check all of the dip switches
 void checkDips() {
+  if (FlashParameters::getInstance().getDipswitchUse())
+  {
+    // Read the microstepping
+    readDipMicrostepping();
 
-  // Read the microstepping
-  readDipMicrostepping();
-
-  // Check if the dip switches are inverted
-  // Check open/closed loop
-  if (!GPIO_READ(dipInverted ? DIP_2_PIN : DIP_3_PIN)) {
-    enableStepCorrection();
-  }
-  else {
-    disableStepCorrection();
+    // Check if the dip switches are inverted
+    // Check open/closed loop
+    if (!GPIO_READ(dipInverted ? DIP_2_PIN : DIP_3_PIN)) {
+      enableStepCorrection();
+    }
+    else {
+      disableStepCorrection();
+    }
   }
 }
 

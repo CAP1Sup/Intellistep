@@ -149,7 +149,7 @@ Encoder::Encoder() {
 
     // Initialize the SPI bus with the parameters we set
     if (HAL_SPI_Init(&spiConfig) != HAL_OK) {
-        #ifdef ENABLE_SERIAL
+        #if (ENABLE_SERIAL != 0)
             Serial.println(F("SPI not initialized!"));
         #endif
     }

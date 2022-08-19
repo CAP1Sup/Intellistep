@@ -2,7 +2,7 @@
 #include "config.h"
 
 // Only include if the serial or CAN bus is enabled
-#if defined(ENABLE_SERIAL) || defined(ENABLE_CAN)
+#if ((ENABLE_SERIAL !=0) || (ENABLE_CAN != 0))
 
 #include "parser.h"
 
@@ -10,24 +10,42 @@
 String parseCommand(String buffer) {
 
     // Gcode Table
+    //  - G0/G1 (ex G1 X50 Y25.3 E22.4 F3000 ; Accelerate to 3000(unit)/min) move see M92 and G20/21 to set unit to step translation and M579
+    //  - G6 (ex G6 D0 R1000 S1000) - Direct stepping, commands the motor to move a specified number of steps in the specified direction. D is direction (0 for CCW, 1 for CW), R is rate (in Hz), and S is the count of steps to move
+    //  - G20 (ex G20) - set unit to inches
+    //  - G21 (ex G21) - set unit to mm
     //  - M17 (ex M17) - Enables the motor (overrides enable pin)
     //  - M18 / M84 (ex M18 or M84) - Disables the motor (overrides enable pin)
+    //  - M92 (ex M92 X87.489 Y87.489 Z87.489 E1:34) - Set axis_steps_per_unit
     //  - M93 (ex M93 V1.8 or M93) - Sets the angle of a full step. This value should be 1.8° or 0.9°. If no value is provided, then the current value will be returned.
     //  - M115 (ex M115) - Prints out firmware information, consisting of the version and any enabled features.
     //  - M116 (ex M116 S1 M"A message") - Simple forward command that will forward a message across the CAN bus. Can be used for pinging or allowing a Serial to connect to the CAN network
     //  - M154 (ex M154 S4) - Runs the manual PID tuning interface. Serial is filled with encoder angles. S term specifies the wait time.
     //  - M301 (ex M301 P1 I1 D1 W10 or M301) - Sets or gets the PID values for the motor. W term is the maximum value of the I windup. If no values are provided, then the current values will be returned.
     //  - M303 (ex M303) - Runs an autotune sequence for the PID loop
-    //  - M350 (ex M350 V16 or M350) - Sets or gets the microstepping divisor for the motor. This value can be 1, 2, 4, 8, 16, or 32. If no value is provided, then the current microstepping divisor will be returned.
+    //  => - M350 (ex M350 S16 or M350) - Sets or gets the microstepping divisor for the motor. This value can be 1, 2, 4, 8, 16, or 32. If no value is provided, then the current microstepping divisor will be returned.
     //  - M352 (ex M352 S1 or M352) - Sets or gets the direction pin inversion for the motor (0 is standard, 1 is inverted). If no value is provided, then the current value will be returned.
     //  - M353 (ex M353 S1 or M353) - Sets or gets the enable pin inversion for the motor (0 is standard, 1 is inverted). If no value is provided, then the current value will be returned.
-    //  - M354 (ex M354 S1 or M354) - Sets or gets if the motor dip switches were installed incorrectly (reversed) (0 is standard, 1 is inverted). If no value is provided, then the current value will be returned.
+    //  - M354 (ex M354 S1 or M354) - Sets or gets if the motor dip switches were installed incorrectly (reversed) (0 is standard, 1 is inverted, 2 is disabled). If no value is provided, then the current value will be returned.
     //  - M355 (ex M355 V1.34 or M355) - Sets or gets the microstep multiplier for the board. Allows to use multiple motors connected to the same mainboard pin, yet have different rates. If no value is provided, then the current value will be returned.
     //  - M356 (ex M356 V1 or M356 VX2 or M356) - Sets or gets the CAN ID of the board. Can be set using the axis character or actual ID. If no value is provided, then the current value will be returned.
+    //  - M360: Report firmware configuration
+    //  - M400: Wait for current moves to finish
+    //  - M410: Quick-Stop
     //  - M500 (ex M500) - Saves the currently loaded parameters into flash
     //  - M501 (ex M501) - Loads all saved parameters from flash
     //  - M502 (ex M502) - Wipes all parameters from flash, then reboots the system
-    //  - M907 (ex M907 R750, M907 I500) - Sets or gets the RMS(R) or Peak(P) current in mA. If dynamic current is enabled, then the accel(A), idle(I), and/or max(M) can be set or retrieved. If no value is set, then the current RMS current (no dynamic current) or the accel, idle, and max terms (dynamic current) will be returned.
+    //  - M503 (ex M503) - report all settings
+    //  - M575 (ex M575 P1 B57600 S1) Set serial comms parameters
+    //  - M579 (ex M579 X1.0127 Y0.998) Scale Cartesian axes (to have motor handle only X commands M579 X1 Y0 Z0)
+    //  - M906 (ex M906 X300 Y500 Z200 E350:350) Set motor currents mA
+    // => - M907 (ex M907 R750, M907 I500) - Sets or gets the RMS(R) or Peak(P) current in mA. If dynamic current is enabled, then the accel(A), idle(I), and/or max(M) can be set or retrieved. If no value is set, then the current RMS current (no dynamic current) or the accel, idle, and max terms (dynamic current) will be returned.
+    //  - M909 (ex M909 X3 Y5 Z2 E3) Set microstepping as powers of 2 
+    //  - M957 (ex M957 E"type" Dnn ) Raise event
+    //  - M1000 (ex M1000 234667211432) set or get time information in nanoseconds, not related to an "absolute time" like 2022-05-18 21:03:54.123456, but like a relative time reference
+    //  -         setting time can allow slave to compute local clock drift and eventually correct clock settings, getting time will allow master to compute clock drift of slaves and 
+    //  - M1001 (ex M1001 234667219999) wait for time - continue move commands processing only after this time others commands are still processed
+
 
     // ! Check to see if the string contains another set of gcode, if so call the function recursively
 
@@ -37,21 +55,22 @@ String parseCommand(String buffer) {
         // Switch statement the command number
         switch (parseValue(buffer, 'M').toInt()) {
 
-            case 17:
+            case 17: {
                 // M17 (ex M17) - Enables the motor (overrides enable pin)
                 motor.setState(FORCED_ENABLED, true);
                 return FEEDBACK_OK;
+            }
 
-            case 18:
+            case 18: {
                 // M18 / M84 (ex M18 or M84) - Disables the motor (overrides enable pin)
                 motor.setState(FORCED_DISABLED, true);
                 return FEEDBACK_OK;
-
-            case 84:
+            }
+            case 84:{
                 // M18 / M84 (ex M18 or M84) - Disables the motor (overrides enable pin)
                 motor.setState(FORCED_DISABLED, true);
                 return FEEDBACK_OK;
-
+            }
             case 93: {
                 // M93 (ex M93 V1.8 or M93) - Sets the angle of a full step. This value should be 1.8° or 0.9°. This value should be 1.8° or 0.9°. If no value is provided, then the current value will be returned.
                 float setValue = parseValue(buffer, 'V').toFloat();
@@ -67,18 +86,19 @@ String parseCommand(String buffer) {
                 }
             }
 
-            case 115:
+            case 115: {
                 // M115 (ex M115) - Prints out firmware information.
                 return FIRMWARE_FEATURE_PRINT;
-
-            #ifdef ENABLE_CAN
-            case 116:
+            }
+            #if (ENABLE_CAN != 0)
+            case 116: {
                 // M116 (ex M116 S1) - Simple forward command that will forward a message across the CAN bus. Can be used for pinging or allowing a Serial to connect to the CAN network
                 // The buffer.substring prevents the first M from being read
                 txCANString(parseValue(buffer, 'S').toInt(), parseString(buffer.substring(1), 'M'));
+            }
             #endif
 
-            #ifdef ENABLE_PID
+            #if (ENABLE_PID == true)
             case 154: {
                 // M154 (ex M154) - Runs the manual PID tuning interface. Serial is filled with encoder angles
 
@@ -150,13 +170,15 @@ String parseCommand(String buffer) {
 
             case 350: {
                 // M350 (ex M350 V16 or M350) - Sets the microstepping divisor for the motor. This value can be 1, 2, 4, 8, 16, or 32. Sets or gets the microstepping divisor for the motor. This value can be 1, 2, 4, 8, 16, or 32. If no value is provided, then the current microstepping divisor will be returned.
-                int16_t setValue = parseValue(buffer, 'V').toInt();
+                int16_t setValue = parseValue(buffer, 'S').toInt();
                 if (setValue != -1) {
 
                     // Value is valid, set and return ok
-                    motor.setMicrostepping(setValue);
-                    updateCorrectionTimer();
+                    if (-1 != motor.setMicrostepping(setValue)) {
                     return FEEDBACK_OK;
+                    } else {
+                        return FEEDBACK_WRONG_VALUE;
+                    }
                 }
                 else {
                     // No value exists, get and return the current value
@@ -227,7 +249,7 @@ String parseCommand(String buffer) {
             case 356: {
 
                 // Only build in functionality if specified
-                #ifdef ENABLE_CAN
+                #if (ENABLE_CAN != 0)
                     // M356 (ex M356 V1 or M356 VX2 or M356) - Sets or gets the CAN ID of the board. Can be set using the axis character or actual ID. If no value is provided, then the current value will be returned.
 
                     // Check the value of the axis
@@ -326,24 +348,32 @@ String parseCommand(String buffer) {
                 #endif
             }
 
-            case 500:
+            case 500: {
                 // M500 (ex M500) - Saves the currently loaded parameters into flash
-                saveParameters();
+                FlashParameters::getInstance().saveParameters();
                 return FEEDBACK_OK;
+            }
 
             case 501: {
                 // M501 (ex M501) - Loads all saved parameters from flash
-                return loadParameters();
+                return FlashParameters::getInstance().loadParameters();
             }
 
-            case 502:
+            case 502: {
                 // M502 (ex M502) - Wipes all parameters from flash, then reboots the system
-                wipeParameters();
+                FlashParameters::getInstance().wipeParameters();
                 // No return here because wipeParameters reboots processor
+            }
+
+            case 503: {
+                // M503 (ex M503) - Wipes all parameters from flash, then reboots the system
+                return FlashParameters::getInstance().dumpParameters();
+                // No return here because wipeParameters reboots processor
+            }
 
             case 907: {
                 // Sets or gets the RMS(R) or Peak(P) current in mA. If dynamic current is enabled, then the accel(A), idle(I), and/or max(M) can be set or retrieved. If no value is set, then the current RMS current (no dynamic current) or the accel, idle, and max terms (dynamic current) will be returned.
-                #ifdef ENABLE_DYNAMIC_CURRENT
+                #if (ENABLE_DYNAMIC_CURRENT != 0 )
                     // Read the set values
                     int16_t accelCurrent = parseValue(buffer, 'A').toInt();
                     int16_t idleCurrent = parseValue(buffer, 'I').toInt();
@@ -404,7 +434,7 @@ String parseCommand(String buffer) {
         switch (parseValue(buffer, 'G').toInt()) {
 
             case 6: {
-                // G6 (ex G6 D0 R1000 S1000) - Direct stepping, commands the motor to move a specified number of steps in the specified direction. D is direction (0 for CCW, 1 for CW), R is rate (in Hz), and S is the count of steps to move
+                // 
                 // Pull the values from the command
                 bool reverse = parseValue(buffer, 'D').equals("1");
                 int32_t rate = parseValue(buffer, 'R').toInt();

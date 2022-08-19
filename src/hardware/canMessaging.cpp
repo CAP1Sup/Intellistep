@@ -2,7 +2,7 @@
 #include "config.h"
 
 // Only build the file if needed
-#ifdef ENABLE_CAN
+#if (ENABLE_CAN != 0)
 
 // The local header file
 #include "canMessaging.h"

@@ -3,98 +3,135 @@
 
 #include "buttons.h"
 #include "canMessaging.h"
-#include "stm32f103xb.h"
-#include "stm32f1xx_hal_flash.h"
+
 #include "timers.h"
 
 // Where the parameters are saved
-// This is 1024 bits behind the end of flash
-// This allows 32 32-bit values to be stored
-#define DATA_START_ADDR      0x0801FC00
+// page size is 1kBytes
+#define FLASH_PAGE_COUNT ((FLASH_BANK1_END - FLASH_BASE)/ FLASH_PAGE_SIZE)
+#define FLASH_STORAGE_PAGES_COUNT  1
+const uint32_t DATA_START_ADDR (FLASH_BASE + (FLASH_PAGE_COUNT - FLASH_STORAGE_PAGES_COUNT) * FLASH_PAGE_SIZE);
 
 // Messages for successful and unsuccessful flash reads
-#define FLASH_LOAD_SUCCESSFUL      F("Flash data loaded")
-#define FLASH_LOAD_UNSUCCESSFUL    F("Flash data non-existent")
+#define FLASH_LOAD_SUCCESSFUL F("Flash data loaded")
+#define FLASH_LOAD_UNSUCCESSFUL F("Flash data non-existent")
 #define FLASH_LOAD_INVALID_VERSION F("Data version outdated")
 
 // Main overview of the format of data storage
-typedef enum {
-
-    // Valid flash contents marker (bool)
-    VALID_FLASH_CONTENTS = 0,
-
-    // Stores the firmware version that was used
-    FLASH_CONTENTS_MAJOR_VERSION_INDEX,
-    FLASH_CONTENTS_MINOR_VERSION_INDEX,
-    FLASH_CONTENTS_PATCH_VERSION_INDEX,
-
-    // Calibrated marker
-    CALIBRATED_INDEX,
-    STEP_OFFSET_INDEX,
-
-    // Dynamic current settings
-    #ifdef ENABLE_DYNAMIC_CURRENT
-    DYNAMIC_ACCEL_CURRENT_INDEX,
-    DYNAMIC_IDLE_CURRENT_INDEX,
-    DYNAMIC_MAX_CURRENT_INDEX,
-
-    #else // ! ENABLE_DYNAMIC_CURRENT
-    CURRENT_INDEX_0,
-    CURRENT_INDEX_1,
-    CURRENT_INDEX_2,
-    #endif // ! ENABLE_DYNAMIC_CURRENT
-
-    // Motor settings
-    FULL_STEP_ANGLE_INDEX,
-    MICROSTEPPING_INDEX,
-    MOTOR_REVERSED_INDEX,
-    ENABLE_INVERSION_INDEX,
-    MICROSTEP_MULTIPLIER_INDEX,
-
-    // PID values
-    P_TERM_INDEX,
-    I_TERM_INDEX,
-    D_TERM_INDEX,
-
-    // CAN
-    CAN_ID_INDEX,
-
-    // Inverted dips
-    INVERTED_DIPS_INDEX
-
-} FLASH_PARAM_INDEXES;
-
-// The max index of the flash parameters (must be manually updated)
 // Note that the flash CANNOT store more than 32 parameters
 // It would overflow the page the data is stored in
-#define MAX_FLASH_PARAM_INDEX 19
+#define FlashFormatVersion 1 //increment each time the following structure change
+#pragma pack(push, 1)
+struct iflashParameters
+{
+    uint16_t FlashVersion;
+    struct     {
+        uint8_t calibrated;
+        float stepOffset;
+    } calibration; //5bytes
+    struct {
+        uint16_t accelCurrent;
+        uint16_t idleCurrent;
+        uint16_t maxCurrent;
+    } current; //6bytes
+    struct {
+        float fullStepAngle;
+        uint16_t Microstepping;
+        float microstepsMultipier;
+    } resolution; //10bytes
+    struct {
+        uint8_t reversed;
+        uint8_t enableInversion;
+    } direction; //2bytes
+    struct {
+        float P;
+        float I;
+        float D;
+    } pid; //12bytes
+    int16_t canIndex; //2bytes
+    struct {
+        uint8_t active;
+        uint8_t isDipInverted;
+    } DipSwitches; //2bytes
+    uint32_t crc; //4byte
+}; 
 
-// Functions
-bool isCalibrated();
+#pragma pack(pop)
 
-// Reading flash
-uint16_t readFlashAddress(uint32_t address);
-uint16_t readFlashU16(uint32_t parameterIndex);
-uint32_t readFlashU32(uint32_t parameterIndex);
-bool     readFlashBool(uint32_t parameterIndex);
-float    readFlashFloat(uint32_t parameterIndex);
 
-// Writing to flash
-void writeToAddress(uint32_t address, uint16_t data);
-void writeFlash(uint32_t parameterIndex, uint16_t data);
-void writeFlash(uint32_t parameterIndex, uint32_t data);
-void writeFlash(uint32_t parameterIndex, bool data);
-void writeFlash(uint32_t parameterIndex, float data);
 
-// Erase all of the parameters in flash
-void eraseParameters();
+class FlashParameters
+{
+public: //types
+    // Enumeration for movement units (in micrometer unit to allow int operations)
+    enum DistanceUnits {
+        mm=0,
+        inches =1
+    };
+    const uint16_t DistanceUnitsMicrom[2] = {
+        1000,
+        25400
+     };
+    
+public:
+    // singleton pattern 
+    static FlashParameters& getInstance();
+    // Functions
+    bool isCalibrated();
+    // Load/saving values to flash
+    void saveParameters();
+    bool checkVersionMatch(iflashParameters& aParam);
+    bool checkVersionMatch();
+    String loadParameters();
+    void wipeParameters();
+    String dumpParameters();
 
-// Load/saving values to flash
-void saveParameters();
-bool checkVersionMatch();
-String loadParameters();
-void wipeParameters();
+    //accessors to flashed values
+    float getFullStepAngle() const;
+    void setFullStepAngle(float newAngle);
 
+    
+#if (ENABLE_DYNAMIC_CURRENT != false)
+    uint16_t getAccelCurrent() const;
+    void setAccelCurrent(uint16_t rmsCurrent);
 #endif
 
+    uint16_t getRMSCurrent() const;
+    void setRMSCurrent(uint16_t rmsCurrent);
+    uint16_t getMAXCurrent() const;
+    void setMAXCurrent(uint16_t maxCurrent);
+    
 
+    uint8_t getMicrostepping() const;
+    void setMicrostepping(uint8_t setMicrostepping);
+
+    float getCalibration() const;   
+    void setCalibration(float aStepOffset, bool aIsCalibrated=true);
+
+    void setDipswitchUse (bool enable);
+    bool getDipswitchUse();
+ 
+
+    // Erase all of the parameters in flash
+    void eraseParameters();
+    uint32_t computeCRC(iflashParameters &aParameters);
+
+private:
+    // Reading flash
+    void ReadFromFlashAddress(int32_t address, void* data, uint32_t size);
+
+    // Writing to flash
+    void writeToFlashAddress(uint32_t address, void* data, uint32_t size);
+
+    //default Parameters
+    iflashParameters GetDefaults();
+
+    //private constructor to prevent use
+    FlashParameters();
+
+private :  //data
+    FlashParameters* mInstance = NULL;
+    iflashParameters mParameters;
+};
+
+#endif
