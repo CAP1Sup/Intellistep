@@ -1,8 +1,12 @@
 # Intellistep
 
-A rework of the terribly coded firmware from the BTT S42B v2 boards.
+**Note: This project is no longer being actively maintained or developed. The code remains available for reference but will not receive updates or support.**
 
-I am currently working on redoing a lot of the functions found in the firmware. A list of the current things that are being worked on is in the Projects tab. If you don't see your issue there, then please let me know.
+Unfortunately, this project has been discontinued due to a hardware issue. There is no way to prevent step loss, so this project is no longer viable. If you would like to continue development, please fork this project and continue from there. If you would like to use the code in this project, please feel free to do so. The code is licensed under the GNU V3 license, so you are free to use it as you see fit. If you have any questions, please feel free to ask. Thank you to everyone who contributed to this project!
+
+## Original README
+
+Intellistep is a rework of the firmware for the BTT S42B v2 boards. This project is a complete rewrite of the firmware to make it more user-friendly and to add new features. The main goal of this project is to make the firmware more user-friendly and to add new features that are not found in the original firmware. This project is still in the beta stage, so there may be bugs and issues. If you find any bugs or issues, please report them in the issues tab.
 
 ***Note: This is a pre-release firmware still in beta testing. It is not ready for actual use yet. Only flash it if you would like to help with the development process. If you compile Intellistep and don't like it, you can always switch back to the production firmware using the file in the "precompiled" folder. The production firmware is `v2ProductionFirmware.bin`. Original BTT build of this project is `firmware-v2.0.bin`***
 
@@ -48,7 +52,8 @@ G/M Code Table
 - M907 (ex M907 R750, M907 I500) - Sets or gets the RMS(R) or Peak(P) current in mA. If dynamic current is enabled, then the accel(A), idle(I), and/or max(M) can be set or retrieved. If no value is set, then the current RMS current (not dynamic current) or the accel, idle, and max terms (dynamic current) will be returned.
 
 Using dip switches
-| Dip switch mappings
+Dip switch mappings:
+
 | PIN     |    Normal orientation      |  Reversed orientation |
 |---------|----------------------------|-----------------------|
 | DIP_1   |    Microstep 1             |  Calibration mode     |
@@ -58,9 +63,7 @@ Using dip switches
 
 ## Authors
 
-<a href="https://github.com/CAP1Sup/Intellistep/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=CAP1Sup/Intellistep" />
-</a>
+[![Contributors](https://contrib.rocks/image?repo=CAP1Sup/Intellistep)](https://github.com/CAP1Sup/Intellistep/graphs/contributors)
 
 ## Credits
 
